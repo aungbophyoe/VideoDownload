@@ -5,53 +5,66 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.karumi.dexter.Dexter
-import com.karumi.dexter.listener.multi.DialogOnAnyDeniedMultiplePermissionsListener
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import com.aungbophyoe.space.videodownload.util.Constants.REQUEST_STORAGE_READ_WRITE_PERMISSION
+import com.aungbophyoe.space.videodownload.util.Utility
+import pub.devrel.easypermissions.AppSettingsDialog
+import pub.devrel.easypermissions.EasyPermissions
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        checkPermission()
+        requestPermission()
     }
 
-    private fun checkPermission(){
+    private fun requestPermission(){
+        if(Utility.hasStoragePermission(this)){
+            return
+        }
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
-            if(Environment.isExternalStorageManager()){
-                Log.d("main", "ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION Access.")
-            }else{
-                Toast.makeText(this,"Storage Permission Denied.",Toast.LENGTH_SHORT).show()
-                val i = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:"+this.packageName))
-                i.addCategory(Intent.CATEGORY_DEFAULT)
-                i.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                startActivity(i)
-            }
+            Toast.makeText(this,"Storage Permission Denied.",Toast.LENGTH_SHORT).show()
+            val i = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:"+this.packageName))
+            i.addCategory(Intent.CATEGORY_DEFAULT)
+            i.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(i)
         }else{
-            val dialogMultiplePermissionsListener: MultiplePermissionsListener =
-                DialogOnAnyDeniedMultiplePermissionsListener.Builder
-                    .withContext(this)
-                    .withTitle("Read & Write External Storage Permission")
-                    .withMessage("Read and write external storage permission are needed to save download file.")
-                    .withButtonText("Ok")
-                    .withIcon(R.mipmap.ic_launcher)
-                    .build()
-
-            Dexter.withContext(this)
-                .withPermissions(Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                .withListener(dialogMultiplePermissionsListener)
-                .onSameThread()
-                .check()
+            EasyPermissions.requestPermissions(
+                this,
+                "Read and write external storage permission are needed to save download file.",
+                REQUEST_STORAGE_READ_WRITE_PERMISSION,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
         }
     }
 
+
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
+        if(EasyPermissions.somePermissionPermanentlyDenied(this,perms)){
+            AppSettingsDialog.Builder(this).build().show()
+        }else{
+            requestPermission()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode,permissions,grantResults,this)
     }
 }
