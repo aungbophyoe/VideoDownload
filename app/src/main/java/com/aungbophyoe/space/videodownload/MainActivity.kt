@@ -9,6 +9,8 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.databinding.DataBindingUtil
+import com.aungbophyoe.space.videodownload.databinding.ActivityMainBinding
 import com.aungbophyoe.space.videodownload.util.Constants.REQUEST_STORAGE_READ_WRITE_PERMISSION
 import com.aungbophyoe.space.videodownload.util.Utility
 import pub.devrel.easypermissions.AppSettingsDialog
@@ -16,9 +18,21 @@ import pub.devrel.easypermissions.EasyPermissions
 
 
 class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
+    private var binding : ActivityMainBinding? = null
+    private val TAG : String = "MainActivity"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
+        binding!!.apply {
+            btnDownload.setOnClickListener {
+                if(edtMainActivity.text.isNullOrBlank()){
+                    edtMainActivity.error = "Require link!"
+                    return@setOnClickListener
+                }
+                val link = edtMainActivity.text
+                Log.d(TAG,"")
+            }
+        }
         requestPermission()
     }
 
@@ -43,9 +57,9 @@ class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
         }
     }
 
-
     override fun onDestroy() {
         super.onDestroy()
+        binding = null
     }
 
     override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
