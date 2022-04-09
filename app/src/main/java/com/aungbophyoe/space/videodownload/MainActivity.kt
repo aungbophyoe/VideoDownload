@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
                     return@setOnClickListener
                 }
                 val link = edtMainActivity.text
-                Log.d(TAG,"")
+                Log.d(TAG,"Hello ")
             }
         }
         requestPermission()
