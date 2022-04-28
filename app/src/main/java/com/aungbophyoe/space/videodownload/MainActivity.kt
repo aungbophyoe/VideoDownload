@@ -7,19 +7,28 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import com.aungbophyoe.space.videodownload.databinding.ActivityMainBinding
+import com.aungbophyoe.space.videodownload.service.DownloadService
+import com.aungbophyoe.space.videodownload.util.Constants
 import com.aungbophyoe.space.videodownload.util.Constants.REQUEST_STORAGE_READ_WRITE_PERMISSION
+import com.aungbophyoe.space.videodownload.util.DownloadEvent
 import com.aungbophyoe.space.videodownload.util.Utility
+import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
     private var binding : ActivityMainBinding? = null
     private val TAG : String = "MainActivity"
+
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
@@ -30,10 +39,61 @@ class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
                     return@setOnClickListener
                 }
                 val link = edtMainActivity.text
+                sendCommandToService(Constants.START_DOWNLOAD,"$link")
                 Log.d(TAG,"Hello ")
             }
         }
+        observedDownloadData()
         requestPermission()
+    }
+
+    private fun observedDownloadData(){
+        try {
+            binding!!.apply {
+                DownloadService.downloadEvent.observe(this@MainActivity){
+                    it?.let { downloadEvent ->
+                        when(downloadEvent){
+                            is DownloadEvent.Downloading -> {
+                                btnDownload.text = "Downloading"
+                                progressBar.visibility = View.VISIBLE
+                                btnDownload.isEnabled = false
+                                edtMainActivity.isEnabled = false
+                            }
+                            is DownloadEvent.Downloaded -> {
+                                btnDownload.text = "Download"
+                                btnDownload.isEnabled = true
+                                edtMainActivity.isEnabled = true
+                                progressBar.visibility = View.INVISIBLE
+                            }
+                        }
+                    }
+                }
+
+                DownloadService.downloadProgress.observe(this@MainActivity){
+                    it?.let { value ->
+                        progressBar.progress = value
+                        if(value == 100){
+                            btnDownload.text = "Downloaded"
+                            btnDownload.isEnabled = true
+                            edtMainActivity.isEnabled = true
+                            progressBar.progress = 100
+                            progressBar.visibility = View.INVISIBLE
+                        }
+                    }
+                }
+            }
+        }catch (e:Exception){
+            Log.d(TAG,"${e.message} ")
+        }
+    }
+
+    private fun sendCommandToService(action:String,link:String){
+        startService(
+            Intent(this,DownloadService::class.java).apply {
+                this.action = action
+                this.putExtra("link","$link")
+            }
+        )
     }
 
     private fun requestPermission(){
