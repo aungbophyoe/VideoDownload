@@ -40,7 +40,6 @@ class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
                 }
                 val link = edtMainActivity.text
                 sendCommandToService(Constants.START_DOWNLOAD,"$link")
-                Log.d(TAG,"Hello ")
             }
         }
         observedDownloadData()

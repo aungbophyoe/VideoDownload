@@ -20,6 +20,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.*
 import java.net.URL
 import javax.inject.Inject
@@ -69,13 +70,13 @@ class DownloadService : LifecycleService() {
         startForeground(Constants.NOTIFICATION_ID,notificationBuilder.build())
         downloadProgress.observe(this) {
             if(it == 100){
-                downloadEvent.value = DownloadEvent.Downloaded
                 notificationBuilder.setOnlyAlertOnce(false)
                 notificationBuilder.setAutoCancel(true)
                 notificationBuilder.setContentTitle("Download Complete.")
                 notificationBuilder.setContentText("")
                 notificationBuilder.setProgress(0,0,false)
                 notificationManager.notify(Constants.NOTIFICATION_ID, notificationBuilder.build())
+                downloadEvent.value = DownloadEvent.Downloaded
                 notificationManager.cancel(Constants.NOTIFICATION_ID)
             }else{
                 notificationBuilder.setContentTitle("Downloading")
@@ -95,20 +96,13 @@ class DownloadService : LifecycleService() {
             val filename = downloadLink!!.substring(downloadLink!!.lastIndexOf('/')+1)
             val file = File("$dd/${Utility.getCurrentTimeInMillis()}_$filename")
 
-            /*CoroutineScope(Dispatchers.IO).launch {
-
-            }*/
-
-
-            Thread{
+            CoroutineScope(Dispatchers.IO).launch {
                 val url = URL(downloadLink)
                 val connection = url.openConnection()
                 connection.connect()
                 val fileLength = connection.contentLength
                 val output: OutputStream = FileOutputStream(file.path)
                 val input: InputStream = BufferedInputStream(connection.getInputStream())
-
-
                 val data = ByteArray(1024)
                 var total: Long = 0
                 var count: Int
@@ -119,28 +113,20 @@ class DownloadService : LifecycleService() {
                     total += count
                     progress = ((total*100)/fileLength).toInt()
                     output.write(data, 0, count)
-                    // Broadcast immediately
-                    CoroutineScope(Dispatchers.Main).launch {
+                    withContext(Dispatchers.Main){
                         if (progress == 0) {
                             downloadProgress.value = progress
                         }
                         if (progress - prevProgress == DOWNLOAD_NOTI_EVERY_PERCENT) {
                             downloadProgress.value = progress
-                            // Publish progress notification
                             prevProgress = progress
                         }
                     }
                 }
-
-                /*while (input.read(data).also { count = it } != -1) {
-
-                }*/
-
                 output.flush()
                 output.close()
                 input.close()
-            }.start()
-
+            }
         }catch (e:Exception){
          Log.d("service","${e.message}")
         }
