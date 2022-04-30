@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity(),EasyPermissions.PermissionCallbacks {
                                 edtMainActivity.isEnabled = false
                             }
                             is DownloadEvent.Downloaded -> {
-                                btnDownload.text = "Download"
+                                btnDownload.text = "Downloaded"
                                 btnDownload.isEnabled = true
                                 edtMainActivity.isEnabled = true
                                 progressBar.visibility = View.INVISIBLE

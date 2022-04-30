@@ -52,6 +52,7 @@ dependencies {
 
     // coroutine
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
+
     // lifecycle service
     implementation 'androidx.lifecycle:lifecycle-service:2.4.1'
     // di hilt

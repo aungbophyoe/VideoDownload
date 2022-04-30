@@ -13,4 +13,6 @@ object Utility {
         }else{
             EasyPermissions.hasPermissions(context,Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
+
+    fun getCurrentTimeInMillis() = "${System.currentTimeMillis()}"
 }

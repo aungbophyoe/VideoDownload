@@ -15,10 +15,10 @@ import androidx.lifecycle.MutableLiveData
 import com.aungbophyoe.space.videodownload.util.Constants
 import com.aungbophyoe.space.videodownload.util.Constants.START_DOWNLOAD
 import com.aungbophyoe.space.videodownload.util.DownloadEvent
+import com.aungbophyoe.space.videodownload.util.Utility
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.*
 import java.net.URL
@@ -68,9 +68,20 @@ class DownloadService : LifecycleService() {
         }
         startForeground(Constants.NOTIFICATION_ID,notificationBuilder.build())
         downloadProgress.observe(this) {
-            notificationBuilder.setContentText("Downloading")
-            notificationBuilder.setProgress(100,it,false)
-            notificationManager.notify(Constants.NOTIFICATION_ID, notificationBuilder.build())
+            if(it == 100){
+                downloadEvent.value = DownloadEvent.Downloaded
+                notificationBuilder.setOnlyAlertOnce(false)
+                notificationBuilder.setContentTitle("Download Complete.")
+                notificationBuilder.setContentText("100 %")
+                notificationBuilder.setProgress(0,0,false)
+                notificationManager.notify(Constants.NOTIFICATION_ID, notificationBuilder.build())
+                notificationManager.cancel(Constants.NOTIFICATION_ID)
+            }else{
+                notificationBuilder.setContentTitle("Downloading")
+                notificationBuilder.setContentText("$it %")
+                notificationBuilder.setProgress(100,it,false)
+                notificationManager.notify(Constants.NOTIFICATION_ID, notificationBuilder.build())
+            }
         }
     }
 
@@ -81,17 +92,21 @@ class DownloadService : LifecycleService() {
                 dd.mkdir()
             }
             val filename = downloadLink!!.substring(downloadLink!!.lastIndexOf('/')+1)
-            val file = File("$dd/$filename")
+            val file = File("$dd/${Utility.getCurrentTimeInMillis()}_$filename")
+
+            /*CoroutineScope(Dispatchers.IO).launch {
+
+            }*/
+
 
             Thread{
                 val url = URL(downloadLink)
                 val connection = url.openConnection()
                 connection.connect()
-                // this will be useful so that you can show a typical 0-100% progress bar
                 val fileLength = connection.contentLength
-
-                val input: InputStream = BufferedInputStream(connection.getInputStream())
                 val output: OutputStream = FileOutputStream(file.path)
+                val input: InputStream = BufferedInputStream(connection.getInputStream())
+
 
                 val data = ByteArray(1024)
                 var total: Long = 0
@@ -99,39 +114,32 @@ class DownloadService : LifecycleService() {
                 var prevProgress = 0
                 var progress: Int
 
-                while (input.read(data).also { count = it } != -1) {
-                    total += count.toLong()
-                    progress = (total * 100 / fileLength).toInt()
+                while ((input.read(data)).also {dd-> count = dd  } > 0){
+                    total += count
+                    progress = ((total*100)/fileLength).toInt()
                     output.write(data, 0, count)
-
                     // Broadcast immediately
-                    if (progress == 0) {
-                        downloadProgress.value = progress
-                    }
-                    if (progress - prevProgress == DOWNLOAD_NOTI_EVERY_PERCENT) {
-                        downloadProgress.value = progress
-                        // Publish progress notification
-                        prevProgress = progress
-                        notificationBuilder.setContentText("Downloading")
-                        notificationBuilder.setProgress(100,progress,false)
-                        notificationManager.notify(Constants.NOTIFICATION_ID, notificationBuilder.build())
+                    CoroutineScope(Dispatchers.Main).launch {
+                        if (progress == 0) {
+                            downloadProgress.value = progress
+                        }
+                        if (progress - prevProgress == DOWNLOAD_NOTI_EVERY_PERCENT) {
+                            downloadProgress.value = progress
+                            // Publish progress notification
+                            prevProgress = progress
+                        }
                     }
                 }
+
+                /*while (input.read(data).also { count = it } != -1) {
+
+                }*/
 
                 output.flush()
                 output.close()
                 input.close()
             }.start()
 
-            /*CoroutineScope(Dispatchers.Main).launch{
-
-            }*/
-
-            downloadProgress.value = 100
-            notificationBuilder.setOnlyAlertOnce(false)
-            notificationBuilder.setContentText("Download Complete.")
-            notificationManager.notify(Constants.NOTIFICATION_ID, notificationBuilder.build())
-            notificationManager.cancel(Constants.NOTIFICATION_ID)
         }catch (e:Exception){
          Log.d("service","${e.message}")
         }
