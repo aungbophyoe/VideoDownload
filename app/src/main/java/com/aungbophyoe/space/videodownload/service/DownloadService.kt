@@ -71,8 +71,9 @@ class DownloadService : LifecycleService() {
             if(it == 100){
                 downloadEvent.value = DownloadEvent.Downloaded
                 notificationBuilder.setOnlyAlertOnce(false)
+                notificationBuilder.setAutoCancel(true)
                 notificationBuilder.setContentTitle("Download Complete.")
-                notificationBuilder.setContentText("100 %")
+                notificationBuilder.setContentText("")
                 notificationBuilder.setProgress(0,0,false)
                 notificationManager.notify(Constants.NOTIFICATION_ID, notificationBuilder.build())
                 notificationManager.cancel(Constants.NOTIFICATION_ID)

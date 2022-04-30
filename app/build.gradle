@@ -51,7 +51,7 @@ dependencies {
     implementation 'pub.devrel:easypermissions:3.0.0'
 
     // coroutine
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0'
 
     // lifecycle service
     implementation 'androidx.lifecycle:lifecycle-service:2.4.1'

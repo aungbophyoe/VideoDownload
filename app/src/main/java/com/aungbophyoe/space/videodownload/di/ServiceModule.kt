@@ -35,9 +35,8 @@ object ServiceModule {
     @Provides
     fun provideNotificationBuilder(@ApplicationContext context: Context,pendingIntent: PendingIntent): NotificationCompat.Builder{
         return NotificationCompat.Builder(context, Constants.NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false)
             .setOngoing(true)
-            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("Download in progress")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setProgress(100,0,false)
