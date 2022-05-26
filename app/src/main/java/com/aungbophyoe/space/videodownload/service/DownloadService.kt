@@ -70,6 +70,7 @@ class DownloadService : LifecycleService() {
         startForeground(Constants.NOTIFICATION_ID,notificationBuilder.build())
         downloadProgress.observe(this) {
             if(it == 100){
+                Log.d("Service","download complete")
                 notificationBuilder.setOnlyAlertOnce(false)
                 notificationBuilder.setAutoCancel(true)
                 notificationBuilder.setContentTitle("Download Complete.")
